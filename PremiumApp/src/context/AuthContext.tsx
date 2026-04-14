@@ -25,29 +25,46 @@ const AuthContext = createContext<AuthContextType>({
 })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+    // Estados básicos
     const [user, setUser] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
     const [sucursalNombre, setSucursalNombre] = useState<string>('');
-const getInitialSession = () => {
-    if (typeof window !== 'undefined') {
-        const raw = localStorage.getItem('admin_session');
-        return raw ? JSON.parse(raw) : null;
-    }
-    return null;
-};
-const initialSession = getInitialSession();
-const [sessionUser, setSessionUser] = useState<any>(initialSession);
-const [isAdmin, setIsAdmin] = useState(() => !!initialSession);
-const [sucursalId, setSucursalId] = useState<string>(() => initialSession?.sucursal_id || '');
+    
+    // Lectura sincrónica del admin_session guardado en localStorage
+    const getInitialSession = () => {
+        if (typeof window !== 'undefined') {
+            const raw = localStorage.getItem('admin_session');
+            return raw ? JSON.parse(raw) : null;
+        }
+        return null;
+    };
+    const initialSession = getInitialSession();
+    
+    // Estados derivados de la sesión inicial
+    const [sessionUser, setSessionUser] = useState<any>(initialSession);
+    const [isAdmin, setIsAdmin] = useState(() => !!initialSession);
+    const [sucursalId, setSucursalId] = useState<string>(() => initialSession?.sucursal_id || '');
+    // Track the session token to detect changes
+    const [sessionToken, setSessionToken] = useState<string>(() => {
+        if (typeof window !== 'undefined') {
+            const raw = localStorage.getItem('admin_session');
+            return raw ? JSON.stringify(raw) : '';
+        }
+        return '';
+    });
 
     const supabase = createClient()
 
     const logout = useCallback(() => {
         localStorage.removeItem('admin_session')
+        // Clear session state immediately
         setSessionUser(null)
         setIsAdmin(false)
         setSucursalId('')
         setSucursalNombre('')
+        setSessionToken('')
+        // Notify of session change before redirect
+        window.dispatchEvent(new Event('admin-session-changed'))
         window.location.href = '/admin/login'
     }, [])
 
@@ -67,6 +84,12 @@ const [sucursalId, setSucursalId] = useState<string>(() => initialSession?.sucur
                         resolvedSucursalId = session.sucursal_id
                         setSucursalId(session.sucursal_id)
                     }
+                } else {
+                    // No session found
+                    setSessionUser(null)
+                    setIsAdmin(false)
+                    setSucursalId('')
+                    setSucursalNombre('')
                 }
 
                 // 2. Also check Supabase auth (for backward compat)
@@ -101,6 +124,8 @@ const [sucursalId, setSucursalId] = useState<string>(() => initialSession?.sucur
                     if (sucData) {
                         setSucursalNombre(sucData.nombre)
                     }
+                } else {
+                    setSucursalNombre('')
                 }
             } catch (error) {
                 console.error('Auth check error:', error)
@@ -111,13 +136,27 @@ const [sucursalId, setSucursalId] = useState<string>(() => initialSession?.sucur
 
         initAuth()
 
+        // Listen for custom auth session change event (same tab)
+        const handleSessionChange = () => {
+            setLoading(true)
+            const newRaw = localStorage.getItem('admin_session')
+            setSessionToken(newRaw ? JSON.stringify(newRaw) : '')
+        }
+
+        window.addEventListener('admin-session-changed', handleSessionChange)
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setUser(session?.user ?? null)
-            setLoading(false)
+            if (!session?.user) {
+                setLoading(false)
+            }
         })
 
-        return () => subscription.unsubscribe()
-    }, [supabase])
+        return () => {
+            subscription.unsubscribe()
+            window.removeEventListener('admin-session-changed', handleSessionChange)
+        }
+    }, [supabase, sessionToken])
 
     return (
         <AuthContext.Provider value={{ user, loading, sucursalId, sucursalNombre, isAdmin, sessionUser, logout }}>

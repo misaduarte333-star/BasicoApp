@@ -87,6 +87,8 @@ export default function AdminLoginPage() {
                         return
                     }
                     localStorage.setItem('admin_session', JSON.stringify(admin))
+                    // Notify AuthContext of session change
+                    window.dispatchEvent(new Event('admin-session-changed'))
                     router.push('/admin')
                 } else {
                     setError('Credenciales incorrectas')

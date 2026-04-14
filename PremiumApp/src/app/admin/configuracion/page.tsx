@@ -28,7 +28,7 @@ import { toast } from 'sonner'
 import { useBusinessLabels } from '@/hooks/useBusinessLabels'
 
 export default function ConfiguracionPage() {
-    const { sucursalId } = useAuth()
+    const { sucursalId, loading: authLoading } = useAuth()
     const labels = useBusinessLabels()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -54,9 +54,11 @@ export default function ConfiguracionPage() {
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+        if (authLoading || !sucursalId) return () => clearInterval(timer)
+        
         cargarConfiguracion()
         return () => clearInterval(timer)
-    }, [])
+    }, [authLoading, sucursalId])
 
     const cargarConfiguracion = async () => {
         if (!sucursalId) return

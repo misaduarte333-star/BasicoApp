@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 export default function ServiciosPage() {
-    const { sucursalId } = useAuth()
+    const { sucursalId, loading: authLoading } = useAuth()
     const { businessType } = useBusinessLabels()
     const [servicios, setServicios] = useState<Servicio[]>([])
     const [loading, setLoading] = useState(true)
@@ -64,10 +64,11 @@ export default function ServiciosPage() {
     }, [supabase, sucursalId])
 
     useEffect(() => {
+        if (authLoading || !sucursalId) return
         cargarServicios()
         const timer = setInterval(() => setCurrentTime(new Date()), 1000)
         return () => clearInterval(timer)
-    }, [cargarServicios])
+    }, [cargarServicios, authLoading, sucursalId])
 
     const formattedDate = currentTime.toLocaleDateString('es-MX', { 
         weekday: 'long', 

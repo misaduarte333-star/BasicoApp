@@ -82,7 +82,7 @@ import { Progress } from '@/components/ui/progress'
 import type { Barbero, CitaDesdeVista, Gasto } from '@/lib/types'
 
 export default function FinanzasPage() {
-    const { sucursalId } = useAuth()
+    const { sucursalId, loading: authLoading } = useAuth()
     const [gastos, setGastos] = useState<Gasto[]>([])
     const [loading, setLoading] = useState(true)
     const [date, setDate] = useState<Date | undefined>(new Date())
@@ -212,11 +212,12 @@ export default function FinanzasPage() {
     }
 
     useEffect(() => {
+        if (authLoading || !sucursalId) return
         fetchGastos()
         fetchBusinessMetrics()
         const timer = setInterval(() => setCurrentTime(new Date()), 1000)
         return () => clearInterval(timer)
-    }, [])
+    }, [authLoading, sucursalId])
 
     const formattedDate = currentTime.toLocaleDateString('es-MX', { 
         weekday: 'long', 

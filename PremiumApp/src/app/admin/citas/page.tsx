@@ -56,7 +56,7 @@ import { toast } from "sonner"
 import { Loader2 } from 'lucide-react'
 
 function CitasContent() {
-    const { sucursalId } = useAuth()
+    const { sucursalId, loading: authLoading } = useAuth()
     const { professional } = useBusinessLabels()
     // ... (rest of the state remains the same)
     const [mounted, setMounted] = useState(false)
@@ -188,25 +188,25 @@ function CitasContent() {
     }, [supabase, filtroFecha, filtroEstado, sucursalId])
 
     useEffect(() => {
-        if (mounted && filtroFecha && sucursalId) {
-            cargarCitas(true) 
+        if (authLoading || !mounted || !filtroFecha || !sucursalId) return
+        
+        cargarCitas(true) 
 
-            const channel = supabase.channel('citas-page-changes')
-                .on(
-                    'postgres_changes' as any,
-                    { event: '*', schema: 'public', table: 'citas' },
-                    () => {
-                        console.log('Realtime update received on CitasPage')
-                        cargarCitas() 
-                    }
-                )
-                .subscribe()
+        const channel = supabase.channel('citas-page-changes')
+            .on(
+                'postgres_changes' as any,
+                { event: '*', schema: 'public', table: 'citas' },
+                () => {
+                    console.log('Realtime update received on CitasPage')
+                    cargarCitas() 
+                }
+            )
+            .subscribe()
 
-            return () => {
-                supabase.removeChannel(channel)
-            }
+        return () => {
+            supabase.removeChannel(channel)
         }
-    }, [mounted, filtroFecha, filtroEstado, sucursalId, cargarCitas, supabase])
+    }, [mounted, filtroFecha, filtroEstado, sucursalId, cargarCitas, supabase, authLoading])
 
     if (!mounted) {
         return <div className="p-8 text-foreground">Cargando aplicación...</div>

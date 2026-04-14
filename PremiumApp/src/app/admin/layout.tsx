@@ -8,333 +8,326 @@ import { ConnectionStatus } from '@/components/ConnectionStatus'
 import { cn } from '@/lib/utils'
 import { isLowEndDevice } from '@/lib/performance'
 import { ThemeToggle } from '@/components/ThemeToggle'
-
 import { useBusinessLabels } from '@/hooks/useBusinessLabels'
+
+const NAV_ITEMS = [
+    { href: '/admin', icon: 'dashboard', label: 'Panel Control', group: 'principal' },
+    { href: '/admin/citas', icon: 'calendar_month', label: 'Agenda Global', group: 'principal' },
+    { href: '/admin/clientes', icon: 'badge', label: 'Clientes', group: 'principal' },
+    { href: '/admin/barberos', icon: 'engineering', label: 'Staff', group: 'gestion' },
+    { href: '/admin/servicios', icon: 'auto_fix_high', label: 'Servicios', group: 'gestion' },
+    { href: '/admin/reportes', icon: 'monitoring', label: 'Reportes', group: 'analisis' },
+    { href: '/admin/finanzas', icon: 'account_balance_wallet', label: 'Finanzas', group: 'analisis' },
+    { href: '/admin/configuracion', icon: 'tune', label: 'Configuración', group: 'sistema' },
+]
+
+const GROUP_LABELS: Record<string, string> = {
+    principal: 'Principal',
+    gestion: 'Gestión',
+    analisis: 'Análisis',
+    sistema: 'Sistema',
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+    const [showMobileMenu, setShowMobileMenu] = useState(false)
     const router = useRouter()
     const pathname = usePathname()
     const { businessName, professionals } = useBusinessLabels()
+    const [isLowPerformance, setIsLowPerformance] = useState(false)
 
     useEffect(() => {
-        if (pathname === '/admin/login') {
-            setIsCheckingAuth(false)
-            return
-        }
-
+        if (pathname === '/admin/login') { setIsCheckingAuth(false); return }
         const session = sessionStorage.getItem('barbercloud_session') || localStorage.getItem('admin_session')
-        if (!session) {
-            router.push('/admin/login')
-        } else {
-            setIsCheckingAuth(false)
-        }
+        if (!session) { router.push('/admin/login') } else { setIsCheckingAuth(false) }
     }, [pathname, router])
 
-    const isLinkActive = (href: string) => {
-        if (href === '/admin') return pathname === '/admin'
-        return pathname === href || pathname.startsWith(href + '/')
+    useEffect(() => {
+        if (typeof window !== 'undefined') setIsLowPerformance(isLowEndDevice())
+    }, [])
+
+    // Close mobile menu when clicking outside or navigating
+    useEffect(() => {
+        setShowMobileMenu(false)
+    }, [pathname])
+
+    const isActive = (href: string) =>
+        href === '/admin' ? pathname === '/admin' : pathname === href || pathname.startsWith(href + '/')
+
+    const handleLogout = () => {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('admin_session')
+            sessionStorage.removeItem('barbercloud_session')
+        }
+        router.push('/admin/login')
     }
 
-    const [isLowPerformance, setIsLowPerformance] = useState(false)
-    
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setIsLowPerformance(isLowEndDevice())
-        }
-    }, [])
+    const toggleTheme = () => {
+        if (typeof window === 'undefined') return
+        const stored = localStorage.getItem('theme')
+        const current = stored || (document.documentElement.classList.contains('dark') ? 'dark' : 'light')
+        const next = current === 'dark' ? 'light' : 'dark'
+        document.documentElement.setAttribute('data-theme', next)
+        document.documentElement.classList.toggle('dark', next === 'dark')
+        document.documentElement.classList.toggle('light', next === 'light')
+        localStorage.setItem('theme', next)
+    }
 
     if (isCheckingAuth) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary shadow-glow-gold"></div>
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="relative size-16">
+                        <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
+                        <div className="absolute inset-0 rounded-full border-t-2 border-primary animate-spin" />
+                        <div className="absolute inset-3 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-primary text-xl">auto_awesome</span>
+                        </div>
+                    </div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground font-bold animate-pulse">
+                        Verificando acceso...
+                    </p>
+                </div>
             </div>
         )
     }
 
-    if (pathname === '/admin/login') {
-        return <>{children}</>
-    }
+    if (pathname === '/admin/login') return <>{children}</>
+
+    /* ── Group nav items ── */
+    const grouped = NAV_ITEMS.reduce<Record<string, typeof NAV_ITEMS>>((acc, item) => {
+        if (!acc[item.group]) acc[item.group] = []
+        acc[item.group].push(item)
+        return acc
+    }, {})
 
     return (
         <div className={cn(
             "bg-background text-foreground min-h-screen flex flex-col lg:flex-row font-display relative selection:bg-primary selection:text-black antialiased transition-colors duration-300",
             isLowPerformance && "efficiency-mode"
         )}>
-            {/* Material Symbols Outlined stylesheet */}
             <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
-            {/* Mobile Header (Elite Style) */}
-            <header className="lg:hidden h-14 px-4 border-b border-border flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-xl z-30">
+            {/* ────────────────────────────────────────────────────
+                MOBILE HEADER
+            ──────────────────────────────────────────────────── */}
+            <header className="lg:hidden h-14 px-4 border-b border-border/60 flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-xl z-30">
+                {/* Brand */}
                 <div className="flex items-center gap-2.5">
-                    <div className="size-10 rounded-xl overflow-hidden shadow-lg shadow-primary/20 border border-primary/20 bg-background flex items-center justify-center text-primary font-bold">
-                        {businessName.charAt(0)}
+                    <div className="size-8 rounded-lg bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-[0_0_12px_-2px_rgba(212,175,55,0.5)]">
+                        <span className="text-black font-black text-sm">{businessName.charAt(0)}</span>
                     </div>
-                    <h1 className="text-sm font-black tracking-[0.2em] text-foreground uppercase italic">{businessName}</h1>
+                    <span className="text-sm font-black tracking-[0.15em] uppercase">{businessName}</span>
                 </div>
+
+                {/* Actions */}
                 <div className="flex items-center gap-2">
-                    {/* Mobile Theme Toggle */}
-                    <button
-                        onClick={() => {
-                            // Check current theme state from multiple sources
-                            let currentTheme = 'light';
-                            
-                            // Check localStorage first
-                            if (typeof window !== 'undefined') {
-                                const storedTheme = localStorage.getItem('theme');
-                                if (storedTheme) {
-                                    currentTheme = storedTheme;
-                                } else {
-                                    // Fallback to checking document classes
-                                    if (document.documentElement.classList.contains('dark')) {
-                                        currentTheme = 'dark';
-                                    }
-                                }
-                            }
-                            
-                            // Toggle theme
-                            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                            
-                            // Apply theme changes
-                            if (typeof window !== 'undefined') {
-                                document.documentElement.setAttribute('data-theme', newTheme);
-                                document.documentElement.classList.toggle('dark', newTheme === 'dark');
-                                document.documentElement.classList.toggle('light', newTheme === 'light');
-                                localStorage.setItem('theme', newTheme);
-                            }
-                        }}
-                        className="relative size-9 min-h-[36px] rounded-lg border border-border bg-muted/50 flex items-center justify-center transition-all hover:bg-muted/80 active:scale-95 touch-manipulation group"
-                        aria-label="Cambiar tema entre claro y oscuro"
-                        title="Cambiar tema"
-                    >
-                        <span className="material-symbols-outlined text-lg leading-none group-hover:scale-110 transition-transform">light_mode</span>
-                        <div className="absolute -top-1 -right-1 size-2 rounded-full bg-primary/70 group-hover:scale-125 transition-transform"></div>
+                    <button onClick={toggleTheme}
+                        className="size-9 rounded-lg border border-border bg-muted/40 flex items-center justify-center hover:bg-muted transition-all active:scale-95 touch-manipulation"
+                        aria-label="Cambiar tema">
+                        <span className="material-symbols-outlined text-base leading-none">contrast</span>
                     </button>
-                    
-                    {/* Mobile Logout Button */}
-                    <button
-                        onClick={() => { 
-                            // Clear session
-                            if (typeof window !== 'undefined') {
-                                localStorage.removeItem('admin_session'); 
-                                sessionStorage.removeItem('barbercloud_session');
-                            }
-                            router.push('/admin/login'); 
-                        }}
-                        className="relative size-9 min-h-[36px] rounded-lg border border-border bg-muted/50 flex items-center justify-center transition-all hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-200 dark:hover:border-red-800 active:scale-95 touch-manipulation group"
-                        aria-label="Cerrar sesión del panel de administración"
-                        title="Cerrar sesión"
-                    >
-                        <span className="material-symbols-outlined text-lg leading-none text-muted-foreground group-hover:text-red-500 transition-colors">logout</span>
-                        <div className="absolute -bottom-0.5 -right-0.5 w-full h-0.5 bg-gradient-to-r from-transparent via-red-400 to-transparent opacity-0 group-hover:opacity-70 transition-opacity"></div>
+                    <button onClick={handleLogout}
+                        className="size-9 rounded-lg border border-border bg-muted/40 flex items-center justify-center hover:border-red-400/40 hover:text-red-400 transition-all active:scale-95 touch-manipulation"
+                        aria-label="Cerrar sesión">
+                        <span className="material-symbols-outlined text-base leading-none">logout</span>
                     </button>
-                    
-                    {/* User Menu (Avatar) */}
-                    <div className="size-9 min-h-[36px] rounded-lg overflow-hidden border border-border bg-background shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                        <Image 
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAupJ0NN2FAFZ6tI6RCShLVEdmHhuGCITlUKRL6_nXpmUHJwgFD5gdYKHv4rgGoTTyZjfhMPhOizJfi_Wr0I8ScGatKToDD6OoSBPCK216hMjcwbbVW8ECH4_42v7X7UxdAc0iJnJ3ZYaVfVubqC5ggr2alR3AGRmXpmgpnox1TvJ_LjpECls_bxd51pd4_A9JwUKRWndND9sgtx_KrQo6V3Ish93C9evXJpme6TaCkAOstX_qONuWfqoJ4uYZWK8CxXjC5OmTd8Wg" 
-                            alt="Avatar del administrador"
-                            width={36}
-                            height={36}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform"
-                        />
-                    </div>
                 </div>
             </header>
 
-            {/* Theme Initialization Script for Mobile and Desktop */}
-            <script
-                dangerouslySetInnerHTML={{
-                    __html: `
-                    // Enhanced theme initialization script
-                    (function() {
-                        // Only run on client-side
-                        if (typeof window !== 'undefined') {
-                            // Check if current theme is stored
-                            let storedTheme = localStorage.getItem('theme');
-                            
-                            // If no stored theme, check system preference as fallback
-                            if (!storedTheme) {
-                                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                                    storedTheme = 'dark';
-                                } else {
-                                    storedTheme = 'light';
-                                }
-                            }
-                            
-                            // Apply the theme
-                            document.documentElement.setAttribute('data-theme', storedTheme);
-                            document.documentElement.classList.toggle('dark', storedTheme === 'dark');
-                            document.documentElement.classList.toggle('light', storedTheme === 'light');
-                            
-                            // Listen for system theme changes as a fallback
-                            if (window.matchMedia) {
-                                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-                                    if (!localStorage.getItem('theme')) {
-                                        const newTheme = e.matches ? 'dark' : 'light';
-                                        document.documentElement.setAttribute('data-theme', newTheme);
-                                        document.documentElement.classList.toggle('dark', newTheme === 'dark');
-                                        document.documentElement.classList.toggle('light', newTheme === 'light');
-                                    }
-                                });
-                            }
-                        }
-                    })();
-                    `
-                }}
-            />
+            {/* ────────────────────────────────────────────────────
+                DESKTOP SIDEBAR
+            ──────────────────────────────────────────────────── */}
+            <aside className="w-[260px] bg-card border-r border-border/60 flex-col h-screen sticky top-0 z-50 hidden lg:flex">
 
-            <aside className={`
-                w-72 bg-card border-r border-border flex-col h-screen sticky top-0 z-50 overflow-hidden
-                hidden lg:flex transition-transform duration-500
-            `}>
-                <div className="p-6 flex items-center gap-3.5">
-                    <div className="size-12 rounded-xl overflow-hidden shadow-lg shadow-primary/20 border border-primary/20 bg-card transition-transform hover:scale-110 flex items-center justify-center text-primary font-bold text-xl">
-                        {businessName.charAt(0)}
-                    </div>
-                    <div className="min-w-0">
-                        <h1 className="text-lg font-black tracking-[0.2em] text-foreground leading-none max-w-full truncate">{businessName}</h1>
-                        <p className="text-[9px] uppercase tracking-[0.3em] text-foreground/40 font-black mt-1">Portal Premium</p>
+                {/* Brand Header */}
+                <div className="relative px-5 py-5 border-b border-border/40 overflow-hidden">
+                    {/* Ambient glow */}
+                    <div className="absolute -top-6 -left-6 size-24 rounded-full bg-primary/8 blur-2xl pointer-events-none" />
+                    <div className="absolute -bottom-4 -right-4 size-20 rounded-full bg-primary/5 blur-xl pointer-events-none" />
+
+                    <div className="relative flex items-center gap-3">
+                        {/* Logo mark */}
+                        <div className="relative shrink-0">
+                            <div className="size-11 rounded-xl bg-gradient-to-br from-primary/90 to-primary flex items-center justify-center shadow-[0_4px_20px_-4px_rgba(212,175,55,0.5)] border border-primary/30">
+                                <span className="text-black font-black text-lg">{businessName.charAt(0)}</span>
+                            </div>
+                            <div className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-emerald-500 border-2 border-card" />
+                        </div>
+
+                        <div className="min-w-0">
+                            <h1 className="text-[13px] font-black tracking-[0.18em] text-foreground leading-tight truncate uppercase">
+                                {businessName}
+                            </h1>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="material-symbols-outlined text-[10px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>diamond</span>
+                                <p className="text-[9px] uppercase tracking-[0.3em] text-primary/70 font-black">Premium Suite</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <nav className="flex-1 px-4 space-y-1.5 mt-2 overflow-y-auto custom-scrollbar pt-2">
-                    <NavItem href="/admin" icon="dashboard" label="Panel Control" active={isLinkActive('/admin')} />
-                    <NavItem href="/admin/citas" icon="calendar_month" label="Agenda Global" active={isLinkActive('/admin/citas')} />
-                    <NavItem href="/admin/clientes" icon="badge" label="Clientes" active={isLinkActive('/admin/clientes')} />
-                    <NavItem href="/admin/barberos" icon="engineering" label={`Gestión ${professionals}`} active={isLinkActive('/admin/barberos')} />
-                    <NavItem href="/admin/servicios" icon="brush" label="Servicios" active={isLinkActive('/admin/servicios')} />
-                    <NavItem href="/admin/reportes" icon="monitoring" label="Reportes" active={isLinkActive('/admin/reportes')} />
-                    <NavItem href="/admin/finanzas" icon="account_balance_wallet" label="Finanzas" active={isLinkActive('/admin/finanzas')} />
-                    <NavItem href="/admin/configuracion" icon="settings" label="Ajustes" active={isLinkActive('/admin/configuracion')} />
+                {/* Navigation */}
+                <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto custom-scrollbar">
+                    {Object.entries(grouped).map(([group, items]) => (
+                        <div key={group}>
+                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 px-3 mb-1.5">
+                                {GROUP_LABELS[group]}
+                            </p>
+                            <div className="space-y-0.5">
+                                {items.map(item => (
+                                    <NavItem
+                                        key={item.href}
+                                        href={item.href}
+                                        icon={item.icon}
+                                        label={item.href === '/admin/barberos' ? `${professionals}` : item.label}
+                                        active={isActive(item.href)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </nav>
 
-                <div className="p-4 mt-auto border-t border-border bg-background/20 space-y-4">
-                    <div className="flex justify-center py-2 px-4 bg-muted/30 rounded-2xl border border-border">
+                {/* Footer */}
+                <div className="p-3 border-t border-border/40 space-y-2">
+                    {/* Theme Toggle */}
+                    <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-muted/30 border border-border/40">
+                        <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm text-muted-foreground">contrast</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Apariencia</span>
+                        </div>
                         <ThemeToggle />
                     </div>
-                    
-                    <div className="bg-muted/50 rounded-2xl p-3 border border-border hover:border-primary/20 transition-all group">
-                        <div className="flex items-center gap-3">
-                            <div className="size-9 rounded-xl overflow-hidden border border-primary/20 group-hover:scale-105 transition-transform">
-                                <img 
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAupJ0NN2FAFZ6tI6RCShLVEdmHhuGCITlUKRL6_nXpmUHJwgFD5gdYKHv4rgGoTTyZjfhMPhOizJfi_Wr0I8ScGatKToDD6OoSBPCK216hMjcwbbVW8ECH4_42v7X7UxdAc0iJnJ3ZYaVfVubqC5ggr2alR3AGRmXpmgpnox1TvJ_LjpECls_bxd51pd4_A9JwUKRWndND9sgtx_KrQo6V3Ish93C9evXJpme6TaCkAOstX_qONuWfqoJ4uYZWK8CxXjC5OmTd8Wg" 
-                                    alt="Admin"
-                                    className="w-full h-full object-cover"
-                                />
+
+                    {/* Profile Card */}
+                    <div className="rounded-xl border border-border/40 bg-muted/20 overflow-hidden hover:border-primary/20 transition-all group">
+                        <div className="flex items-center gap-3 p-3">
+                            <div className="relative shrink-0">
+                                <div className="size-9 rounded-lg overflow-hidden border border-primary/20">
+                                    <img
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAupJ0NN2FAFZ6tI6RCShLVEdmHhuGCITlUKRL6_nXpmUHJwgFD5gdYKHv4rgGoTTyZjfhMPhOizJfi_Wr0I8ScGatKToDD6OoSBPCK216hMjcwbbVW8ECH4_42v7X7UxdAc0iJnJ3ZYaVfVubqC5ggr2alR3AGRmXpmgpnox1TvJ_LjpECls_bxd51pd4_A9JwUKRWndND9sgtx_KrQo6V3Ish93C9evXJpme6TaCkAOstX_qONuWfqoJ4uYZWK8CxXjC5OmTd8Wg"
+                                        alt="Admin" className="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-500 border-2 border-card" />
                             </div>
-                            <div className="min-w-0">
-                                <p className="text-[11px] font-black text-foreground leading-none uppercase tracking-wider truncate">Administrador</p>
-                                <div className="flex items-center gap-1.5 mt-1">
-                                    <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[11px] font-black uppercase tracking-wider text-foreground truncate">Administrador</p>
+                                <div className="flex items-center gap-1 mt-0.5">
+                                    <span className="material-symbols-outlined text-[9px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
                                     <p className="text-[9px] text-primary font-bold uppercase tracking-widest">Master Access</p>
                                 </div>
                             </div>
                         </div>
-                        <button
-                            onClick={() => { localStorage.removeItem('admin_session'); router.push('/admin/login'); }}
-                            className="w-full mt-3 py-2 text-[10px] font-black text-muted-foreground hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-all uppercase tracking-widest border border-border"
-                        >
+                        <button onClick={handleLogout}
+                            className="w-full py-2 text-[10px] font-black text-muted-foreground hover:text-red-400 hover:bg-red-500/5 transition-all uppercase tracking-widest border-t border-border/40 flex items-center justify-center gap-1.5">
+                            <span className="material-symbols-outlined text-xs leading-none">logout</span>
                             Cerrar Sesión
                         </button>
                     </div>
                 </div>
             </aside>
 
-            {/* Mobile Bottom Navigation */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/90 border-t border-border py-2 z-40 backdrop-blur-xl transition-colors duration-300">
-                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar px-6 relative">
-                    {/* Shadow indicators for scrolling */}
-                    <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+            {/* ────────────────────────────────────────────────────
+                MOBILE BOTTOM NAV
+            ──────────────────────────────────────────────────── */}
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 border-t border-border/60 py-1 z-40 backdrop-blur-xl">
+                <div className="flex items-center justify-around px-1">
+                    {NAV_ITEMS.slice(0, 5).map(item => {
+                        const active = isActive(item.href)
+                        return (
+                            <Link key={item.href} href={item.href}
+                                className={`flex flex-col items-center gap-0.5 py-1 px-1 transition-all flex-1 max-w-[64px] ${active ? 'text-primary' : 'text-muted-foreground'}`}>
+                                <span className={`material-symbols-outlined text-[18px] leading-none transition-all ${active ? 'scale-105' : ''}`}
+                                    style={active ? { fontVariationSettings: "'FILL' 1" } : {}}>
+                                    {item.icon}
+                                </span>
+                                <span className="text-[6px] font-black tracking-wider uppercase text-center line-clamp-1">{item.label.split(' ')[0]}</span>
+                                {active && <div className="w-3 h-0.5 bg-primary rounded-full" />}
+                            </Link>
+                        )
+                    })}
                     
-                    <Link className={`flex flex-col items-center gap-1 min-w-[72px] py-1 transition-all ${isLinkActive('/admin') ? 'text-primary' : 'text-muted-foreground'}`} href="/admin">
-                        <span className="material-symbols-outlined text-xl leading-none">dashboard</span>
-                        <span className="text-[9px] font-black tracking-widest uppercase">Inicio</span>
-                        {isLinkActive('/admin') && <div className="absolute bottom-0 w-6 h-0.5 bg-primary rounded-full shadow-glow-gold" />}
-                    </Link>
-                    
-                    <Link className={`flex flex-col items-center gap-1 min-w-[72px] py-1 transition-all ${isLinkActive('/admin/citas') ? 'text-primary' : 'text-muted-foreground'}`} href="/admin/citas">
-                        <span className="material-symbols-outlined text-xl leading-none">calendar_month</span>
-                        <span className="text-[9px] font-black tracking-widest uppercase">Agenda</span>
-                        {isLinkActive('/admin/citas') && <div className="absolute bottom-0 w-6 h-0.5 bg-primary rounded-full shadow-glow-gold" />}
-                    </Link>
-
-                    <Link className={`flex flex-col items-center gap-1 min-w-[72px] py-1 transition-all ${isLinkActive('/admin/clientes') ? 'text-primary' : 'text-muted-foreground'}`} href="/admin/clientes">
-                        <span className="material-symbols-outlined text-xl leading-none">badge</span>
-                        <span className="text-[9px] font-black tracking-widest uppercase">Clientes</span>
-                        {isLinkActive('/admin/clientes') && <div className="absolute bottom-0 w-6 h-0.5 bg-primary rounded-full shadow-glow-gold" />}
-                    </Link>
-
-                    <Link className={`flex flex-col items-center gap-1 min-w-[72px] py-1 transition-all ${isLinkActive('/admin/barberos') ? 'text-primary' : 'text-muted-foreground'}`} href="/admin/barberos">
-                        <span className="material-symbols-outlined text-xl leading-none">engineering</span>
-                        <span className="text-[9px] font-black tracking-widest uppercase">Staff</span>
-                        {isLinkActive('/admin/barberos') && <div className="absolute bottom-0 w-6 h-0.5 bg-primary rounded-full shadow-glow-gold" />}
-                    </Link>
-
-                    <Link className={`flex flex-col items-center gap-1 min-w-[72px] py-1 transition-all ${isLinkActive('/admin/servicios') ? 'text-primary' : 'text-muted-foreground'}`} href="/admin/servicios">
-                        <span className="material-symbols-outlined text-xl leading-none">brush</span>
-                        <span className="text-[9px] font-black tracking-widest uppercase">Servicios</span>
-                        {isLinkActive('/admin/servicios') && <div className="absolute bottom-0 w-6 h-0.5 bg-primary rounded-full shadow-glow-gold" />}
-                    </Link>
-
-                    <Link className={`flex flex-col items-center gap-1 min-w-[72px] py-1 transition-all ${isLinkActive('/admin/reportes') ? 'text-primary' : 'text-muted-foreground'}`} href="/admin/reportes">
-                        <span className="material-symbols-outlined text-xl leading-none">monitoring</span>
-                        <span className="text-[9px] font-black tracking-widest uppercase">Reportes</span>
-                        {isLinkActive('/admin/reportes') && <div className="absolute bottom-0 w-6 h-0.5 bg-primary rounded-full shadow-glow-gold" />}
-                    </Link>
-
-                    <Link className={`flex flex-col items-center gap-1 min-w-[72px] py-1 transition-all ${isLinkActive('/admin/finanzas') ? 'text-primary' : 'text-muted-foreground'}`} href="/admin/finanzas">
-                        <span className="material-symbols-outlined text-xl leading-none">account_balance_wallet</span>
-                        <span className="text-[9px] font-black tracking-widest uppercase">Finanzas</span>
-                        {isLinkActive('/admin/finanzas') && <div className="absolute bottom-0 w-6 h-0.5 bg-primary rounded-full shadow-glow-gold" />}
-                    </Link>
-
-                    <Link className={`flex flex-col items-center gap-1 min-w-[72px] py-1 transition-all ${isLinkActive('/admin/configuracion') ? 'text-primary' : 'text-muted-foreground'}`} href="/admin/configuracion">
-                        <span className="material-symbols-outlined text-xl leading-none">settings</span>
-                        <span className="text-[9px] font-black tracking-widest uppercase">Ajustes</span>
-                        {isLinkActive('/admin/configuracion') && <div className="absolute bottom-0 w-6 h-0.5 bg-primary rounded-full shadow-glow-gold" />}
-                    </Link>
+                    {/* More Menu Button */}
+                    <div className="relative">
+                        <button onClick={() => setShowMobileMenu(!showMobileMenu)}
+                            className={`flex flex-col items-center gap-0.5 py-1 px-1 transition-all flex-1 max-w-[64px] ${showMobileMenu ? 'text-primary' : 'text-muted-foreground'}`}>
+                            <span className="material-symbols-outlined text-[18px] leading-none">more_vert</span>
+                            <span className="text-[6px] font-black tracking-wider uppercase">Más</span>
+                        </button>
+                        
+                        {/* Dropdown Menu */}
+                        {showMobileMenu && (
+                            <div className="absolute bottom-full right-0 mb-1 bg-card border border-border/60 rounded-lg shadow-lg overflow-hidden min-w-[130px] z-50">
+                                {NAV_ITEMS.slice(5).map(item => {
+                                    const active = isActive(item.href)
+                                    return (
+                                        <Link key={item.href} href={item.href}
+                                            onClick={() => setShowMobileMenu(false)}
+                                            className={cn(
+                                                "flex items-center gap-2 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider border-b border-border/30 last:border-0 transition-colors",
+                                                active ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:bg-muted/60'
+                                            )}>
+                                            <span className="material-symbols-outlined text-xs leading-none" style={active ? { fontVariationSettings: "'FILL' 1" } : {}}>
+                                                {item.icon}
+                                            </span>
+                                            <span className="truncate">{item.label}</span>
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </nav>
 
-            {/* Main Content Area */}
-            <main className="flex-1 overflow-y-auto pb-24 lg:pb-0 relative z-10">
+            {/* ────────────────────────────────────────────────────
+                MAIN CONTENT
+            ──────────────────────────────────────────────────── */}
+            <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 relative z-10 min-h-screen">
                 <ConnectionStatus />
-                <div className="max-w-7xl mx-auto w-full animate-fade-in relative flex-1 p-4 lg:p-6">
+                <div className="max-w-7xl mx-auto w-full p-4 lg:p-6 animate-fade-in">
                     {children}
                 </div>
             </main>
+
+            {/* Theme init script */}
+            <script dangerouslySetInnerHTML={{
+                __html: `
+                (function(){if(typeof window==='undefined')return;var t=localStorage.getItem('theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.classList.toggle('light',t==='light');})();
+            `}} />
         </div>
     )
 }
 
+/* ── NavItem Component ── */
 function NavItem({ href, icon, label, active }: { href: string; icon: string; label: string; active: boolean }) {
     return (
-        <Link
-            href={href}
-            className={`
-                flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 group relative overflow-hidden
-                ${active
-                    ? 'bg-primary text-black font-black shadow-[0_0_20px_-5px_rgba(212,175,55,0.4)]'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent hover:border-border'
-                }
-            `}
-        >
+        <Link href={href} className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
+            active
+                ? "bg-primary text-black"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+        )}>
             {active && (
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-black/20" />
+                <div className="absolute inset-0 rounded-xl shadow-[0_4px_15px_-4px_rgba(212,175,55,0.35)] pointer-events-none" />
             )}
-            <span className={`material-symbols-outlined text-xl transition-transform duration-300 ${!active && 'group-hover:scale-110 group-hover:rotate-6 opacity-70 group-hover:opacity-100'} ${active ? 'font-black' : ''}`}>
+            <span className={cn(
+                "material-symbols-outlined text-[18px] leading-none shrink-0 transition-transform duration-200",
+                !active && "group-hover:scale-110",
+                active && "opacity-90"
+            )} style={active ? { fontVariationSettings: "'FILL' 1" } : {}}>
                 {icon}
             </span>
-            <span className={`text-[11px] uppercase tracking-[0.15em] transition-all ${active ? 'font-black' : 'font-bold'}`}>
+            <span className={cn(
+                "text-[11px] uppercase tracking-[0.12em] truncate",
+                active ? "font-black" : "font-bold"
+            )}>
                 {label}
             </span>
-            
-            {!active && (
-                <div className="absolute right-2 translate-x-4 group-hover:translate-x-0 transition-transform duration-300">
-                    <span className="material-symbols-outlined text-[10px] text-primary/40">chevron_right</span>
-                </div>
+            {active && (
+                <span className="ml-auto material-symbols-outlined text-[14px] opacity-60 leading-none">chevron_right</span>
             )}
         </Link>
     )

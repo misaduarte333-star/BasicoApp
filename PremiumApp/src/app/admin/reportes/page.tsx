@@ -26,7 +26,7 @@ import { es } from 'date-fns/locale'
 import { KPICard } from '@/components/KPICard'
 
 export default function ReportesPage() {
-    const { sucursalId } = useAuth()
+    const { sucursalId, loading: authLoading } = useAuth()
     const [loading, setLoading] = useState(true)
     const [dateRange, setDateRange] = useState({
         start: new Date().toISOString().split('T')[0],
@@ -143,8 +143,9 @@ export default function ReportesPage() {
     }, [supabase, dateRange, sucursalId])
 
     useEffect(() => {
+        if (authLoading || !sucursalId) return
         cargarReportes()
-    }, [cargarReportes])
+    }, [cargarReportes, authLoading, sucursalId])
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000)

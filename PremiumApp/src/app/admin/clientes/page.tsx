@@ -57,7 +57,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 export default function ClientesPage() {
-    const { sucursalId } = useAuth()
+    const { sucursalId, loading: authLoading } = useAuth()
     const [clientes, setClientes] = useState<Cliente[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
@@ -92,10 +92,11 @@ export default function ClientesPage() {
     }, [supabase])
 
     useEffect(() => {
+        if (authLoading || !sucursalId) return
         cargarClientes()
         const timer = setInterval(() => setCurrentTime(new Date()), 1000)
         return () => clearInterval(timer)
-    }, [cargarClientes, sucursalId])
+    }, [cargarClientes, sucursalId, authLoading])
     
     const formattedDate = currentTime.toLocaleDateString('es-MX', { 
         weekday: 'long', 

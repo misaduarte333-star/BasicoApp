@@ -46,7 +46,7 @@ import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 
 export default function BarberosPage() {
-    const { sucursalId } = useAuth()
+    const { sucursalId, loading: authLoading } = useAuth()
     const { professional } = useBusinessLabels()
     const [barberos, setBarberos] = useState<BarberoConSucursal[]>([])
     const [loading, setLoading] = useState(true)
@@ -93,10 +93,9 @@ export default function BarberosPage() {
     }, [supabase, sucursalId])
 
 useEffect(() => {
-    if (sucursalId) {
-        cargarBarberos()
-    }
-}, [cargarBarberos, sucursalId])
+    if (authLoading || !sucursalId) return
+    cargarBarberos()
+}, [cargarBarberos, sucursalId, authLoading])
 
     const handleDelete = async (id: string) => {
         if (!confirm('¿Estás seguro de eliminar este profesional?')) return

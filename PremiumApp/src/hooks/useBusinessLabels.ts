@@ -14,6 +14,7 @@ interface BusinessLabels {
     location: string         // e.g., "Estación", "Cubículo", "Mesa"
     businessName: string
     businessType: string     // e.g., "Barbería", "Centro de Estética"
+    loading: boolean
 }
 
 const defaultLabels: BusinessLabels = {
@@ -25,7 +26,8 @@ const defaultLabels: BusinessLabels = {
     services: 'Servicios',
     location: 'Estación',
     businessName: 'Premium Service',
-    businessType: 'Barbería'
+    businessType: 'Barbería',
+    loading: true
 }
 
 export function useBusinessLabels() {
