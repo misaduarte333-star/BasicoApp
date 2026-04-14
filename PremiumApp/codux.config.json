@@ -1,0 +1,10 @@
+{
+    "$schema": "https://raw.githubusercontent.com/wixplosives/codux-config/master/codux.config.schema.json",
+    "engine": "react",
+    "componentsSearchGlob": "src/components/**/*.tsx",
+    "boardsSearchGlob": "src/boards/**/*.board.tsx",
+    "styling": {
+        "framework": "tailwind",
+        "version": 4
+    }
+}

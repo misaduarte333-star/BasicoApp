@@ -1,0 +1,22 @@
+{
+  "name": "Cholo Barber | Panel Barbero",
+  "short_name": "Cholo Barber",
+  "description": "Panel de trabajo para barberos de Cholo Barbershop",
+  "start_url": "/tablet",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0A0C12",
+  "theme_color": "#B17814",
+  "icons": [
+    {
+      "src": "/logo-cholo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/logo-cholo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

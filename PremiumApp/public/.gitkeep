@@ -1,0 +1,2 @@
+# Carpeta pública para activos estáticos.
+# Este archivo asegura que Git guarde la carpeta incluso si está vacía.
