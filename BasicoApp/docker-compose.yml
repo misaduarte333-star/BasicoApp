@@ -1,7 +1,7 @@
 services:
   app:
     build: .
-    image: basico-app:latest
+    image: basicoapp:latest
     container_name: basico-app
     restart: unless-stopped
     ports:
