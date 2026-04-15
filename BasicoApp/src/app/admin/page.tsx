@@ -47,7 +47,8 @@ export default function AdminDashboard() {
         cliente: string | null
     }[]>([])
 
-         * Carga y procesa las métricas principales (KPIs) comparando el día de hoy
+    /**
+     * Carga y procesa las métricas principales (KPIs) comparando el día de hoy
      * con el mismo día de la semana pasada, calculando también el estado de los profesionales.
      */
     const cargarKPIs = useCallback(async () => {
