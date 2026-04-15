@@ -337,6 +337,8 @@ function getDemoProfesionales(): ProfesionalConSucursal[] {
             bloqueo_almuerzo: { inicio: '14:00', fin: '15:00' },
             activo: true,
             hora_entrada: null,
+            comision_porcentaje: 50,
+            meta_cortes_mensual: 100,
             created_at: new Date().toISOString()
         },
         {
@@ -358,6 +360,8 @@ function getDemoProfesionales(): ProfesionalConSucursal[] {
             bloqueo_almuerzo: { inicio: '14:30', fin: '15:30' },
             activo: true,
             hora_entrada: null,
+            comision_porcentaje: 50,
+            meta_cortes_mensual: 100,
             created_at: new Date().toISOString()
         },
         {
@@ -378,6 +382,8 @@ function getDemoProfesionales(): ProfesionalConSucursal[] {
             bloqueo_almuerzo: null,
             activo: false,
             hora_entrada: null,
+            comision_porcentaje: 50,
+            meta_cortes_mensual: 100,
             created_at: new Date().toISOString()
         }
     ]
@@ -395,7 +401,7 @@ function ProfesionalModal({
     onClose: () => void
     onSave: () => void
 }) {
-    const { getLabel } = useBusinessLabels(sucursalId || '')
+    const { getLabel } = useBusinessLabels()
     const [loading, setLoading] = useState(false)
     const [formData, setFormData] = useState({
         nombre: profesional?.nombre || '',
@@ -619,7 +625,7 @@ function HorarioModal({
     onClose: () => void
     onSave: () => void
 }) {
-    const { getLabel } = useBusinessLabels(profesional.sucursal_id || '')
+    const { getLabel } = useBusinessLabels()
     const defaultSchedule = { inicio: '09:00', fin: '18:00' }
     const diasSemana = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']
 

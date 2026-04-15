@@ -1,4 +1,4 @@
-# Despliegue en AWS con EasyPanel
+# Despliegue en AWS con EasyPanel para BasicoApp
 
 ## Descripción General
 

@@ -56,19 +56,20 @@ export default function ConfiguracionPage() {
             if (error) {
                 console.warn('Error loading config:', formatError(error))
             } else if (data) {
-                setSucursal(data as any)
+                const sData = data as any
+                setSucursal(sData)
                 setFormData({
-                    nombre: data.nombre,
-                    direccion: data.direccion || '',
-                    telefono_whatsapp: data.telefono_whatsapp || '',
-                    slug: (data as any).slug || '',
-                    plan: (data as any).plan || 'Gratis',
-                    activa: data.activa,
-                    tipo_prestador: (data as any).tipo_prestador || 'servicios',
-                    tipo_prestador_label: (data as any).tipo_prestador_label || 'Profesional'
+                    nombre: sData.nombre,
+                    direccion: sData.direccion || '',
+                    telefono_whatsapp: sData.telefono_whatsapp || '',
+                    slug: (sData as any).slug || '',
+                    plan: (sData as any).plan || 'Gratis',
+                    activa: sData.activa,
+                    tipo_prestador: (sData as any).tipo_prestador || 'servicios',
+                    tipo_prestador_label: (sData as any).tipo_prestador_label || 'Profesional'
                 })
-                if (data.horario_apertura) {
-                    setHorario(data.horario_apertura as any)
+                if (sData.horario_apertura) {
+                    setHorario(sData.horario_apertura as any)
                 }
             }
         } catch (err) {

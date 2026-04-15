@@ -29,6 +29,19 @@ export type EstadoCita = 'confirmada' | 'en_espera' | 'en_proceso' | 'finalizada
 export type TipoBloqueo = 'almuerzo' | 'vacaciones' | 'dia_festivo' | 'emergencia'
 export type RolAdmin = 'admin' | 'secretaria'
 
+export interface KPIs {
+    citasHoy: number
+    completadas: number
+    ingresos: number
+    noShows: number
+    tendencias: {
+        citasHoy: number
+        completadas: number
+        ingresos: number
+        noShows: number
+    }
+}
+
 // ============================================================================
 // Database Row Types
 // ============================================================================
@@ -111,10 +124,19 @@ export interface UsuarioAdmin {
     created_at: string
 }
 
+export interface ProfesionalConSucursal extends Profesional {
+    sucursal?: Sucursal
+}
+
 export interface CitaConRelaciones extends Cita {
     servicio?: Servicio
     profesional?: Profesional // Relación con profesional
     barbero?: Profesional     // Mantener campo original de Supabase (barbero_id FK)
+}
+
+export interface CostoFijo {
+    categoria: string
+    monto: number
 }
 
 export interface Cliente {
