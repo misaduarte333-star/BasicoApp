@@ -3,6 +3,11 @@
 // ============================================================================
 
 // Schedule Types
+export interface ValidacionResultado {
+    valido: boolean
+    mensaje?: string
+}
+
 export interface HorarioDia {
     apertura: string  // "09:00"
     cierre: string    // "19:00"

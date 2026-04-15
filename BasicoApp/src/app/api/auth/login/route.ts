@@ -36,7 +36,9 @@ export async function POST(req: NextRequest) {
                 .maybeSingle()
 
             if (admin) {
-                if (admin.sucursales?.plan !== 'basico') {
+                const planData = admin.sucursales as any;
+                const adminPlan = Array.isArray(planData) ? planData[0]?.plan : planData?.plan;
+                if (adminPlan !== 'basico') {
                     return NextResponse.json({ error: 'Este panel es exclusivo para el plan Básico. Por favor ingresa desde la plataforma Premium.' }, { status: 403 })
                 }
                 const match = await bcrypt.compare(password, admin.password_hash)
@@ -67,7 +69,9 @@ export async function POST(req: NextRequest) {
 
         const profesional = profesionales?.[0]
         if (profesional) {
-            if (profesional.sucursales?.plan !== 'basico') {
+            const planData = profesional.sucursales as any;
+            const profPlan = Array.isArray(planData) ? planData[0]?.plan : planData?.plan;
+            if (profPlan !== 'basico') {
                 return NextResponse.json({ error: 'Este panel es exclusivo para el plan Básico. Por favor ingresa desde la plataforma Premium.' }, { status: 403 })
             }
             const match = await bcrypt.compare(password, profesional.password_hash)
