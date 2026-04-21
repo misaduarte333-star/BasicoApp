@@ -23,9 +23,10 @@ export default function ServiciosPage() {
      */
     const cargarServicios = useCallback(async () => {
         if (!sucursalId) {
-            setLoading(false)
+            setLoading(true) // Auth hasn't resolved yet — keep spinner
             return
         }
+        setLoading(true)
         try {
             const { data, error } = await supabase
                 .from('servicios')

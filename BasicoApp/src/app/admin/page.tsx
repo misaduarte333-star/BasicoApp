@@ -169,7 +169,7 @@ export default function AdminDashboard() {
                         Bienvenido de vuelta. Aquí está el resumen del día.
                     </p>
                 </div>
-                <div className="flex flex-col items-end">
+                <div className="hidden md:flex flex-col items-end">
                     <div className="flex items-center gap-3">
                         <p className="text-4xl font-bold text-foreground tabular-nums tracking-tight">
                             {currentTime.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: APP_TIMEZONE })}

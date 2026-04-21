@@ -32,9 +32,11 @@ export default function ProfesionalesPage() {
      */
     const cargarProfesionales = useCallback(async () => {
         if (!sucursalId) {
-            setLoading(false)
+            // Auth hasn't resolved yet — keep loading spinner active
+            setLoading(true)
             return
         }
+        setLoading(true)
         try {
             const { data, error } = await (supabase
                 .from('barberos') as any)

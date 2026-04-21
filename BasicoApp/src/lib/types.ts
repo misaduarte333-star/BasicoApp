@@ -30,7 +30,7 @@ export type HorarioLaboralSemana = Partial<Record<DiasSemana, HorarioLaboral>>
 
 // Enums
 export type OrigenCita = 'whatsapp' | 'walkin' | 'manual' | 'telefono'
-export type EstadoCita = 'confirmada' | 'en_espera' | 'en_proceso' | 'finalizada' | 'cancelada' | 'no_show' | 'por_cobrar'
+export type EstadoCita = 'confirmada' | 'en_proceso' | 'finalizada' | 'cancelada'
 export type TipoBloqueo = 'almuerzo' | 'vacaciones' | 'dia_festivo' | 'emergencia'
 export type RolAdmin = 'admin' | 'secretaria'
 
@@ -105,7 +105,7 @@ export interface Cita {
     timestamp_inicio: string
     timestamp_fin: string
     origen: OrigenCita
-    estado: EstadoCita | 'pendiente' | 'ausente'
+    estado: EstadoCita
     notas: string | null
     monto_pagado?: number | null
     metodo_pago?: string | null

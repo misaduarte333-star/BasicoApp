@@ -108,7 +108,7 @@ export default function CitasPage() {
      * estado, servicio, modo de vista, etc.).
      */
     const cargarCitas = useCallback(async () => {
-        if (!filtroFecha) return // Wait for date
+        if (!filtroFecha || !sucursalId) return // Wait for both date and sucursal ID
 
         setLoading(true)
         try {
@@ -181,15 +181,14 @@ export default function CitasPage() {
         }
     }, [supabase, filtroFecha, filtroEstado, filtroServicio, viewMode, historyStart, historyEnd, searchTerm, sucursalId])
 
-    // Load data when mode changes or filters change (debouncing search could be added here)
+    // Load data when mode changes, filters change, or sucursalId resolves from auth
     useEffect(() => {
-        if (mounted) {
+        if (mounted && sucursalId) {
             if (viewMode === 'daily' && filtroFecha) cargarCitas()
-            // For history, maybe wait for explicit "Buscar" or load initial? 
-            // Let's load initial for now
+            // For history, load initial results
             if (viewMode === 'history') cargarCitas()
         }
-    }, [mounted, viewMode, filtroFecha, cargarCitas]) // Removed specific history deps to avoid auto-reload on every keystroke if unwanted, but kept simple for now
+    }, [mounted, sucursalId, viewMode, filtroFecha, cargarCitas])
 
     // Avoid hydration mismatch by not rendering until mounted
     if (!mounted) {
@@ -267,7 +266,7 @@ export default function CitasPage() {
                 </div>
                 <div className="glass-card p-4 text-center border-l-2 border-red-500">
                     <p className="text-2xl font-bold text-red-400">
-                        {citas.filter(c => c.estado === 'cancelada' || c.estado === 'no_show').length}
+                        {citas.filter(c => c.estado === 'cancelada').length}
                     </p>
                     <p className="text-xs text-muted-foreground">Canceladas</p>
                 </div>
@@ -338,11 +337,9 @@ export default function CitasPage() {
                         >
                             <option value="todas">Todas</option>
                             <option value="confirmada">Confirmadas</option>
-                            <option value="en_espera">En Espera</option>
                             <option value="en_proceso">En Proceso</option>
                             <option value="finalizada">Finalizadas</option>
                             <option value="cancelada">Canceladas</option>
-                            <option value="no_show">No Show</option>
                         </select>
                     </div>
                     <div>
@@ -408,9 +405,8 @@ export default function CitasPage() {
                                     ${cita.estado === 'en_proceso' ? 'status-in-progress' : ''}
                                     ${cita.estado === 'finalizada' ? 'bg-slate-500/20 text-muted-foreground' : ''}
                                     ${cita.estado === 'cancelada' ? 'status-cancelled' : ''}
-                                    ${cita.estado === 'no_show' ? 'bg-red-500/20 text-red-400' : ''}
                                 `}>
-                                    {cita.estado ? cita.estado.replace('_', ' ') : ' desconocida'}
+                                    {cita.estado ? cita.estado.replace('_', ' ') : 'desconocida'}
                                 </span>
                             </div>
 
@@ -538,11 +534,10 @@ export default function CitasPage() {
                         status-badge
                         ${cita.estado === 'confirmada' ? 'bg-blue-500/20 text-blue-400' : ''}
                         ${cita.estado === 'en_proceso' ? 'status-in-progress' : ''}
-                        ${cita.estado === 'finalizada' ? 'bg-slate-500/20 text-muted-foreground ' : ''}
+                        ${cita.estado === 'finalizada' ? 'bg-slate-500/20 text-muted-foreground' : ''}
                         ${cita.estado === 'cancelada' ? 'status-cancelled' : ''}
-                        ${cita.estado === 'no_show' ? 'bg-red-500/20 text-red-400' : ''}
                         `}>
-                                                {cita.estado ? cita.estado.replace('_', ' ') : ' desconocida'}
+                                                {cita.estado ? cita.estado.replace('_', ' ') : 'desconocida'}
                                             </span>
                                         </td>
                                         <td className="px-3 md:px-6 py-4 text-right">
@@ -659,7 +654,7 @@ function getDemoCitas(fecha: string): CitaConRelaciones[] {
             timestamp_inicio: `${safeFecha}T12:00:00`,
             timestamp_fin: `${safeFecha}T13:00:00`,
             origen: 'walkin',
-            estado: 'en_espera',
+            estado: 'confirmada',
             notas: 'Cliente frecuente',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -794,7 +789,7 @@ function CitaModal({
                 timestamp_inicio,
                 timestamp_fin,
                 origen: cita ? cita.origen : initialOrigen,
-                estado: cita ? cita.estado : (initialOrigen === 'walkin' ? 'en_espera' : 'confirmada'),
+                estado: cita ? cita.estado : 'confirmada',
                 notas: formData.notas
             }
 

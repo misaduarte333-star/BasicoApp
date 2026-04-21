@@ -58,7 +58,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const checkSession = async () => {
             try {
                 // Check local session first
-                const raw = sessionStorage.getItem('admin_session')
+                const adminRaw = sessionStorage.getItem('admin_session')
+                const profRaw = sessionStorage.getItem('profesional_session')
+                const raw = adminRaw || profRaw
+                
                 let localSucursalId = ''
                 if (raw) {
                     const session = JSON.parse(raw)
@@ -101,17 +104,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     }
                 }
 
-                // If still no sucursalId and we are admin/dev, fetch the first one as default
-                // Use sessionUser.email since we use custom login (not Supabase Auth directly)
-                const currentEmail = user?.email || sessionUser?.email
-                
-                if (!finalSucursalId && (currentEmail === 'dev@panelplus.com' || role === 'dev' || isAdmin || role === 'admin')) {
+                // If still no sucursalId and we are admin/dev, fetch the first one as default.
+                // IMPORTANT: Read from local closure vars — React state (sessionUser, role, isAdmin)
+                // won't update until the next render, so reading them here returns stale values.
+                const localSession = raw ? JSON.parse(raw) : null
+                const localSessionEmail = localSession?.user?.email || ''
+                const localSessionRole: string = localSession?.role || ''
+                // User is admin if: they have a Supabase auth account OR their local session role is admin/dev
+                const isAdminSession = !!user?.email || localSessionRole === 'admin' || localSessionRole === 'dev'
+
+                if (!finalSucursalId && isAdminSession) {
                     const { data: firstSuc } = await (supabase
                         .from('sucursales')
                         .select('id')
                         .limit(1)
                         .single() as any)
-                    
+
                     if (firstSuc) {
                         finalSucursalId = firstSuc.id
                         setSucursalId(firstSuc.id)
