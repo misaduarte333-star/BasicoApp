@@ -132,7 +132,7 @@ export function NuevaCitaModal({
         // Deduplicar por nombre
         const vistos = new Set<string>()
         const unicos: ClienteSugerido[] = []
-        for (const r of data) {
+        for (const r of (data as any[])) {
             if (!vistos.has(r.cliente_nombre)) {
                 vistos.add(r.cliente_nombre)
                 unicos.push({ nombre: r.cliente_nombre, telefono: r.cliente_telefono || '' })
