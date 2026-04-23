@@ -142,19 +142,45 @@ export function CobroModal({ cita, onClose, onSuccess }: CobroModalProps) {
 
                     {/* Monto */}
                     <div className="mb-5">
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            Monto a cobrar
-                        </label>
-                        <div className="relative">
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                Monto Final a Cobrar
+                            </label>
+                            {montoNum > precio && (
+                                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full animate-fade-in">
+                                    + ${(montoNum - precio).toLocaleString('es-MX')} extra
+                                </span>
+                            )}
+                        </div>
+                        <div className="relative mb-3">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">$</span>
                             <input
                                 type="number"
                                 value={monto}
                                 onChange={(e) => setMonto(e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-8 pr-4 py-3 text-xl font-black text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                                className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-8 pr-4 py-3 text-2xl font-black text-white focus:outline-none focus:border-emerald-500 transition-colors"
                                 min="0"
-                                step="0.01"
+                                step="1"
                             />
+                        </div>
+                        
+                        {/* Botones de incremento rápido */}
+                        <div className="flex gap-2">
+                            {[50, 100, 200].map(val => (
+                                <button
+                                    key={val}
+                                    onClick={() => setMonto((prev) => (parseFloat(prev || '0') + val).toString())}
+                                    className="flex-1 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold hover:bg-slate-700 hover:border-slate-600 transition-colors active:scale-95"
+                                >
+                                    + ${val}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => setMonto(precio.toString())}
+                                className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-500 text-[10px] font-bold hover:bg-slate-700 transition-colors"
+                            >
+                                Reset
+                            </button>
                         </div>
                     </div>
 

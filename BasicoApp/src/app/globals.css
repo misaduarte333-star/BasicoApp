@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Habilitar modo oscuro por clase para Tailwind v4 (NextThemes) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* BarberCloud AI - Design System */
 @theme {
   --color-background: var(--bg-primary);
